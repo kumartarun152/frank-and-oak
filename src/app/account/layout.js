@@ -28,7 +28,7 @@ export default function RootLayout({ children }) {
                 <Link
                   href={
                     checkPath !== "/account/account-settings"
-                      ? "./account-settings/"
+                      ? "/account/account-settings/"
                       : "#"
                   }
                 >
@@ -37,7 +37,7 @@ export default function RootLayout({ children }) {
                   </li>
                 </Link>
                 <Link
-                  href={checkPath !== "/account/address" ? "./address/" : "#"}
+                  href={checkPath !== "/account/address" ? "/account/address/" : "#"}
                 >
                   <li className="cursor-pointer hover:font-[600] text-[16px]">
                     Address Book

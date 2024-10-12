@@ -4,6 +4,7 @@ import { IoIosArrowUp, IoIosArrowDown } from "react-icons/io";
 import axios from "axios";
 import { BiFilter } from "react-icons/bi";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 // import Image from "next/image";
 
 const Page = () => {
@@ -15,6 +16,8 @@ const Page = () => {
   const [availableColors, setAvailableColors] = useState([]);
   const [products, setProducts] = useState([]);
   const [filePath, setFilePath] = useState({});
+
+  const router = useRouter();
 
   const sizes = async () => {
     await axios
@@ -58,6 +61,12 @@ const Page = () => {
       });
   };
 
+  const handleSortingAscending = () => {
+    const AscendingSort = products.toSorted((a, b) => (a > b) - (a < b));
+    setProducts(AscendingSort);
+    console.log("SORTED: ", AscendingSort);
+  };
+
   useEffect(() => {
     sizes();
     colors();
@@ -66,7 +75,7 @@ const Page = () => {
   }, [products]);
 
   return (
-    <div className="mt-[50px] w-full grid grid-cols-[1fr_3fr] min-h-[100vh]">
+    <div className="w-full mt-[50px] grid grid-cols-[20%_3fr] min-h-[100vh]">
       <div className="relative h-[100vh]">
         <form>
           <div className="absolute bottom-[20%] w-full productSideNav">
@@ -242,7 +251,10 @@ const Page = () => {
             </div>
             {sort ? (
               <ul className="list-none bg-white w-full">
-                <li className="p-[5px] hover:bg-[#ededed] cursor-pointer">
+                <li
+                  className="p-[5px] hover:bg-[#ededed] cursor-pointer"
+                  onClick={handleSortingAscending}
+                >
                   Ascending
                 </li>
                 <li className="p-[5px] hover:bg-[#ededed] cursor-pointer">
@@ -265,7 +277,13 @@ const Page = () => {
           {products.length !== 0
             ? products.map((v, i) => {
                 return (
-                  <Products product={v} idx={i} key={i} filepath={filePath} />
+                  <Products
+                    product={v}
+                    idx={i}
+                    key={i}
+                    filepath={filePath}
+                    router={router}
+                  />
                 );
               })
             : ""}
@@ -277,13 +295,21 @@ const Page = () => {
 
 export default Page;
 
-function Products({ product, idx, filepath }) {
-  const [hover,setHover]=useState(false);
+function Products({ product, idx, filepath, router }) {
+  const [hover, setHover] = useState(false);
   return (
     <div className="m-[10px] h-[400px] shadow-lg relative">
-      <div className="w-[100%] object-contain cursor-pointer overflow-hidden h-[250px]" onMouseOver={()=>setHover(true)} onMouseOut={()=>setHover(false)}>
+      <div
+        className="w-[100%] object-contain cursor-pointer overflow-hidden h-[250px]"
+        onMouseOver={() => setHover(true)}
+        onMouseOut={() => setHover(false)}
+      >
         <Image
-          src={hover?`${filepath}${product.hover_thumbnail}`:`${filepath}${product.thumbnail}`}
+          src={
+            hover
+              ? `${filepath}${product.hover_thumbnail}`
+              : `${filepath}${product.thumbnail}`
+          }
           alt={product.name}
           width={300}
           layout={"responsive"}
@@ -298,7 +324,10 @@ function Products({ product, idx, filepath }) {
           {`By ${product.brand}`}
         </span>
         <span className="block text-[13px] text-red-500 my-[5px]">{`$${product.price}`}</span>
-        <button className="bg-black p-[5px] text-[14px] text-white hover:bg-white hover:border border-black hover:text-black cursor-pointer absolute bottom-[15px] right-[20px] hover:font-bold">
+        <button
+          className="bg-black p-[5px] text-[14px] text-white hover:bg-white hover:border border-black hover:text-black cursor-pointer absolute bottom-[15px] right-[20px] hover:font-bold"
+          onClick={() => router.push(`/shop-now/product/${product._id}`)}
+        >
           Show More
         </button>
       </div>
