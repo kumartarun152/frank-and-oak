@@ -9,13 +9,27 @@ import Link from "next/link";
 import Offcanvas from "./Offcanvas";
 import Cookies from "js-cookie";
 import { usePathname, useRouter } from "next/navigation";
+import { useSelector } from "react-redux";
 const Header = () => {
   const [showLogin, setShowLogin] = useState(false);
   const [showOffcanvas, setShowOffcanvas] = useState(false);
   const [ifCookie, setIfCookie] = useState(false);
+  const [isMounted, setIsMounted] = useState(false);
+  const { wishList } = useSelector((state) => state.wishList);
 
   const router = useRouter();
   let pathName = usePathname();
+
+  const handleAccountClick = () => {
+    if (ifCookie) {
+      setShowLogin(false);
+      pathName !== "/account/account-settings"
+        ? router.push("/account/account-settings", undefined, { shallow: true })
+        : "#";
+    } else {
+      setShowLogin(true);
+    }
+  };
 
   useEffect(() => {
     const cookie = Cookies.get("token");
@@ -25,23 +39,17 @@ const Header = () => {
       setIfCookie(false);
       router.push("/");
     } else {
-      // alert(pathName);
-      const account = document.querySelector("#account");
-      account.addEventListener("click", () => {
-        console.log("From header pathname, route changed.");
-        setShowLogin(false);
-        setIfCookie(true);
-        pathName !== "/account/account-settings"
-          ? router.push("./../account/account-settings")
-          : "#";
-      });
+      setIsMounted(true);
+      setIfCookie(true);
     }
-  }, []);
-
+  }, [router]);
+  if (!isMounted) {
+    return null;
+  }
   return (
     <header className="w-full h-[50px] border-b grid grid-cols-[10%_70%_20%] p-[0_30px] justify-between fixed top-0 z-50 bg-white">
       <div>
-        <Link href="/">
+        <Link href="/" key="home-link">
           <span className="font-extrabold flex h-full items-center justify-center cursor-pointer ">
             Frank and Oak
           </span>
@@ -49,32 +57,35 @@ const Header = () => {
       </div>
       <div>
         <ul className="list-none w-full flex h-full items-center gap-[25px] px-[25px] ">
-          <Link href="/shop-now/">
+          <Link href="/shop-now/" key="shop-now-link">
             <li className="text-[#ed2e00] cursor-pointer">Shop now</li>
           </Link>
           {/* <li className=" cursor-pointer">Women</li> */}
           {/* <li className=" cursor-pointer">Men</li> */}
-          <Link href="/our-story">
+          <Link href="/our-story" key="story-link">
             <li className=" cursor-pointer">Our Story</li>
           </Link>
         </ul>
       </div>
       <div>
         <ul className="list-none w-full flex h-full items-center justify-end gap-[25px] px-[20px]">
-          <li className="cursor-pointer text-[20px]">
+          {/* <li className="cursor-pointer text-[20px]">
             <GoSearch />
+          </li> */}
+          <li
+            className="cursor-pointer text-[20px] relative"
+            onClick={handleAccountClick}
+          >
+            <VscAccount />
           </li>
-          <li className="cursor-pointer text-[20px] relative">
-            <VscAccount
-              onClick={() => {
-                ifCookie ? setShowLogin(false) : setShowLogin(true);
-              }}
-              id="account"
-            />
-          </li>
-          <li className="cursor-pointer text-[20px]">
-            <BsHeart />
-          </li>
+          <Link href="/account/wishlist">
+            <li className="cursor-pointer text-[20px] flex gap-[5px]">
+              <BsHeart className="inline-block" />
+              <sup className="w-[20px] h-[20px] bg-black text-white rounded-[50%] text-[13px] p-[10px_5px] box-border text-center">
+                {wishList.length}
+              </sup>
+            </li>
+          </Link>
           <li className="cursor-pointer text-[20px]">
             <IoBagOutline onClick={() => setShowOffcanvas(true)} />
           </li>

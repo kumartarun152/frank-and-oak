@@ -1,14 +1,33 @@
 "use client";
+import { addToWishList } from "@/app/redux-tool-kit/features/slice";
 import axios from "axios";
 import Image from "next/image";
 import { useParams } from "next/navigation";
 import React, { useEffect, useState } from "react";
 import { BiHeart } from "react-icons/bi";
+import { useDispatch } from "react-redux";
 
 const Page = () => {
   const { _id } = useParams();
   const [product, setProduct] = useState({});
   const [thumbnail, setThumbnail] = useState([]);
+  const dispatch = useDispatch();
+
+  const handleWishList = (e) => {
+    e.preventDefault();
+    const form = new FormData(e.target);
+    form.append("_id", _id);
+    form.append("quantity", 1);
+    const formEntries = Object.fromEntries(form.entries());
+    if (!formEntries.size) {
+      alert("Select size from available sizes.");
+    } else if (!formEntries.color) {
+      alert("Select color from available colors.");
+    } else {
+      dispatch(addToWishList(formEntries));
+      e.target.reset();
+    }
+  };
 
   const fetchProduct = async () => {
     await axios
@@ -37,7 +56,7 @@ const Page = () => {
   }, [_id]);
 
   return (
-    <div className="w-[95%] min-h-[100vh] mx-auto mt-[50px] grid grid-cols-[2fr_2fr] gap-[20px]">
+    <div className="w-[95%] min-h-[100vh] mx-auto mt-[50px] grid grid-cols-[2fr_2fr] place-content-between box-border">
       <div className="p-[20px] box-border grid grid-cols-[20%_2fr]">
         <div className="flex flex-col gap-[20px]">
           {product.images
@@ -85,10 +104,11 @@ const Page = () => {
           Price: $ {product.price}
         </span>
         <div className="w-full my-[10px]">
-          <form method="post">
+          <form method="post" onSubmit={handleWishList}>
             <select
               name="size"
               className="w-full my-[10px] focus:outline-none border border-black-400 min-h-[30px] cursor-pointer"
+              required
             >
               <option
                 value="default"
@@ -131,6 +151,7 @@ const Page = () => {
             <button
               type="submit"
               className="my-[20px] w-full cursor-pointer p-[10px] box-border block bg-black text-white hover:border border-black hover:bg-white hover:text-black hover:font-bold"
+              required
             >
               Add to WishList <BiHeart className="inline-block" />
             </button>

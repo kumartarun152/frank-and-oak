@@ -16,8 +16,50 @@ const Page = () => {
   const [availableColors, setAvailableColors] = useState([]);
   const [products, setProducts] = useState([]);
   const [filePath, setFilePath] = useState({});
+  const [selectedSizes, setSelectedSizes] = useState([]);
+  const [selectedColors, setSelectedColors] = useState([]);
+  const [selectedPrices, setSelectedPrices] = useState([]);
+  const [filteredProducts, setFilteredProducts] = useState([]);
+  const [checkSelectedGender, setCheckSelectedGender] = useState([]);
+  const [sortingCriteria, setSortingCriteria] = useState("");
 
   const router = useRouter();
+
+  const handleSelectedGender = (e) => {
+    const { checked, value } = e.target;
+    if (checked) {
+      setCheckSelectedGender((prev) => [...prev, value]);
+    } else {
+      setCheckSelectedGender((prev) => prev.filter((g) => g !== value));
+    }
+  };
+
+  const handleSizeFilter = (e) => {
+    const { checked, value } = e.target;
+    if (checked) {
+      setSelectedSizes((prev) => [...prev, value]);
+    } else {
+      setSelectedSizes((prev) => prev.filter((size) => size !== value));
+    }
+  };
+
+  const handleColorFilter = (e) => {
+    const { checked, value } = e.target;
+    if (checked) {
+      setSelectedColors((prev) => [...prev, value]);
+    } else {
+      setSelectedColors((prev) => prev.filter((color) => color !== value));
+    }
+  };
+
+  const handlePriceFilter = (e) => {
+    const { checked, value } = e.target;
+    if (checked) {
+      setSelectedPrices((prev) => [...prev, value]);
+    } else {
+      setSelectedPrices((prev) => prev.filter((price) => price !== value));
+    }
+  };
 
   const sizes = async () => {
     await axios
@@ -60,20 +102,65 @@ const Page = () => {
         alert("Error Occurred");
       });
   };
+  const filter = () => {
+    const result = products.filter((product) => {
+      const gender = checkSelectedGender.length
+        ? product.product_category &&
+          product.product_category.parent_category &&
+          checkSelectedGender.includes(
+            product.product_category.parent_category.name.toLowerCase()
+          )
+        : true;
 
-  const handleSortingAscending = () => {
-    const AscendingSort = products.toSorted((a, b) => (a > b) - (a < b));
-    setProducts(AscendingSort);
-    console.log("SORTED: ", AscendingSort);
+      const sizeMatch = selectedSizes.length
+        ? selectedSizes.some((selectedSize) => {
+            return product.size.some(
+              (productSize) => productSize._id === selectedSize
+            );
+          })
+        : true;
+      const colorMatch = selectedColors.length
+        ? selectedColors.some((selectedColor) => {
+            return product.color.some(
+              (productColor) => productColor._id === selectedColor
+            );
+          })
+        : true;
+      const priceMatch = selectedPrices.length
+        ? selectedPrices.some((productPrice) => {
+            const [min, max] = productPrice.split("-").map(Number);
+            return product.price >= min && product.price <= max;
+          })
+        : true;
+      return sizeMatch && colorMatch && priceMatch && gender;
+    });
+    const sorting = [...result];
+    if (sortingCriteria === "asc") {
+      sorting.sort((a, b) => a.name.localeCompare(b.name));
+    } else if (sortingCriteria === "desc") {
+      sorting.sort((a, b) => b.name.localeCompare(a.name));
+    } else if (sortingCriteria === "price-high-low") {
+      sorting.sort((a, b) => b.price - a.price);
+    } else if (sortingCriteria === "price-low-high") {
+      sorting.sort((a, b) => a.price - b.price);
+    }
+    return setFilteredProducts(sorting);
   };
-
   useEffect(() => {
     sizes();
     colors();
     productData();
-    // console.log(products);
-  }, [products]);
+  }, []);
 
+  useEffect(() => {
+    filter();
+  }, [
+    selectedSizes,
+    selectedColors,
+    selectedPrices,
+    checkSelectedGender,
+    sortingCriteria,
+  ]);
   return (
     <div className="w-full mt-[50px] grid grid-cols-[20%_3fr] min-h-[100vh]">
       <div className="relative h-[100vh]">
@@ -91,6 +178,8 @@ const Page = () => {
                   type="checkbox"
                   name="men"
                   value="men"
+                  checked={checkSelectedGender.includes("men")}
+                  onChange={handleSelectedGender}
                   className="accent-black cursor-pointer"
                 />
                 <span>Men</span>
@@ -100,6 +189,8 @@ const Page = () => {
                   type="checkbox"
                   name="women"
                   value="women"
+                  checked={checkSelectedGender.includes("women")}
+                  onChange={handleSelectedGender}
                   className="accent-black cursor-pointer"
                 />
                 <span>Women</span>
@@ -126,8 +217,10 @@ const Page = () => {
                         <input
                           type="checkbox"
                           name="size"
-                          value={v.size}
+                          value={v._id}
                           className="accent-black cursor-pointer"
+                          onClick={handleSizeFilter}
+                          checked={selectedSizes.includes(v._id)}
                         />
                         <span>{v.size}</span>
                       </li>
@@ -158,7 +251,9 @@ const Page = () => {
                         <input
                           type="checkbox"
                           name="color"
-                          value={v.color}
+                          value={v._id}
+                          checked={selectedColors.includes(v._id)}
+                          onClick={handleColorFilter}
                           className="accent-black cursor-pointer"
                         />
                         <span>{v.color}</span>
@@ -188,6 +283,8 @@ const Page = () => {
                         name="price"
                         value="0-50"
                         className="accent-black cursor-pointer"
+                        checked={selectedPrices.includes("0-50")}
+                        onChange={handlePriceFilter}
                       />
                       <span>$0-$50</span>
                     </li>
@@ -197,6 +294,8 @@ const Page = () => {
                         name="price"
                         value="50-100"
                         className="accent-black cursor-pointer"
+                        checked={selectedPrices.includes("50-100")}
+                        onClick={handlePriceFilter}
                       />
                       <span>$50-$100</span>
                     </li>
@@ -206,6 +305,8 @@ const Page = () => {
                         name="price"
                         value="100-200"
                         className="accent-black cursor-pointer"
+                        checked={selectedPrices.includes("100-200")}
+                        onClick={handlePriceFilter}
                       />
                       <span>$100-$200</span>
                     </li>
@@ -215,6 +316,8 @@ const Page = () => {
                         name="price"
                         value="200-250"
                         className="accent-black cursor-pointer"
+                        checked={selectedPrices.includes("200-250")}
+                        onClick={handlePriceFilter}
                       />
                       <span>$200-$250</span>
                     </li>
@@ -224,6 +327,8 @@ const Page = () => {
                         name="price"
                         value="250-500"
                         className="accent-black cursor-pointer"
+                        checked={selectedPrices.includes("250-500")}
+                        onClick={handlePriceFilter}
                       />
                       <span>$250-$500</span>
                     </li>
@@ -253,17 +358,26 @@ const Page = () => {
               <ul className="list-none bg-white w-full">
                 <li
                   className="p-[5px] hover:bg-[#ededed] cursor-pointer"
-                  onClick={handleSortingAscending}
+                  onClick={() => setSortingCriteria("asc")}
                 >
                   Ascending
                 </li>
-                <li className="p-[5px] hover:bg-[#ededed] cursor-pointer">
+                <li
+                  className="p-[5px] hover:bg-[#ededed] cursor-pointer"
+                  onClick={() => setSortingCriteria("desc")}
+                >
                   Descending
                 </li>
-                <li className="p-[5px] hover:bg-[#ededed] cursor-pointer">
+                <li
+                  className="p-[5px] hover:bg-[#ededed] cursor-pointer"
+                  onClick={() => setSortingCriteria("price-low-high")}
+                >
                   Price low to high
                 </li>
-                <li className="p-[5px] hover:bg-[#ededed] cursor-pointer">
+                <li
+                  className="p-[5px] hover:bg-[#ededed] cursor-pointer"
+                  onClick={() => setSortingCriteria("price-high-low")}
+                >
                   Price high to low
                 </li>
               </ul>
@@ -274,8 +388,8 @@ const Page = () => {
         </ul>
 
         <div className="w-[95%] mx-auto grid md:grid-cols-4 sm:grid-cols-2 gap-[20px] my-[55px] min-h-[100vh]">
-          {products.length !== 0
-            ? products.map((v, i) => {
+          {filteredProducts.length !== 0
+            ? filteredProducts.map((v, i) => {
                 return (
                   <Products
                     product={v}
@@ -286,7 +400,17 @@ const Page = () => {
                   />
                 );
               })
-            : ""}
+            : products.map((v, i) => {
+                return (
+                  <Products
+                    product={v}
+                    idx={i}
+                    key={i}
+                    filepath={filePath}
+                    router={router}
+                  />
+                );
+              })}
         </div>
       </div>
     </div>
@@ -297,8 +421,9 @@ export default Page;
 
 function Products({ product, idx, filepath, router }) {
   const [hover, setHover] = useState(false);
+
   return (
-    <div className="m-[10px] h-[400px] shadow-lg relative">
+    <div className="m-[10px] h-[450px] shadow-lg relative">
       <div
         className="w-[100%] object-contain cursor-pointer overflow-hidden h-[250px]"
         onMouseOver={() => setHover(true)}
@@ -325,6 +450,7 @@ function Products({ product, idx, filepath, router }) {
         </span>
         <span className="block text-[13px] text-red-500 my-[5px]">{`$${product.price}`}</span>
         <button
+          type="button"
           className="bg-black p-[5px] text-[14px] text-white hover:bg-white hover:border border-black hover:text-black cursor-pointer absolute bottom-[15px] right-[20px] hover:font-bold"
           onClick={() => router.push(`/shop-now/product/${product._id}`)}
         >
