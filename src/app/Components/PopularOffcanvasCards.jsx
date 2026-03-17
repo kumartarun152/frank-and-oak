@@ -21,7 +21,7 @@ const PopularOffcanvasCards = ({ img, content, price, sizes }) => {
               Select a size
             </option>
             {sizes.map((v) => (
-              <option value={v} className="cursor-pointer">
+              <option key={v} value={v} className="cursor-pointer">
                 {v}
               </option>
             ))}
